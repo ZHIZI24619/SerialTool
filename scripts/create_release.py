@@ -16,19 +16,18 @@ import urllib.parse
 import urllib.request
 
 REPO = "ZHIZI24619/SerialTool"
-TAG = "v0.2.0"
-NAME = "v0.2.0"
+TAG = "v0.2.1"
+NAME = "v0.2.1"
 BODY = (
-    "## v0.2.0 更新\n\n"
-    "- 改用目录版（onedir）打包：修复单文件版被杀毒拦截导致「Failed to load Python DLL」无法启动的问题\n"
-    "- 修复下载进度条出现空白取消按钮框的问题（彻底移除取消按钮）\n"
+    "## v0.2.1 更新\n\n"
+    "- 修复任务栏/窗口图标四角白点：改为多尺寸圆角 logo（每个尺寸独立裁剪，缩放无白边）\n"
 )
 API = "https://api.github.com"
 UPLOAD_API = "https://uploads.github.com"
 ASSET = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "installer",
-    "SerialTool-Setup-0.2.0.exe",
+    "SerialTool-Setup-0.2.1.exe",
 )
 
 

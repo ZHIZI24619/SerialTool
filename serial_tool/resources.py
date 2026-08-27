@@ -35,3 +35,18 @@ def make_rounded_logo(size):
     painter.drawPixmap(0, 0, size, size, QIcon(asset_path("logo.ico")).pixmap(size, size))
     painter.end()
     return pm
+
+
+def make_rounded_logo_icon():
+    """生成多尺寸圆角 logo 的 QIcon。
+
+    任务栏/标题栏/窗口会用不同尺寸显示图标；若只提供单个尺寸，
+    缩放时圆角边缘会重新采样出白色残留（白点）。这里为每个常用尺寸
+    单独做圆角裁剪，任何显示尺寸下都干净。返回 QIcon。
+    """
+    from PyQt5.QtGui import QIcon
+
+    icon = QIcon()
+    for size in (16, 20, 24, 32, 48, 64, 128, 256):
+        icon.addPixmap(make_rounded_logo(size))
+    return icon

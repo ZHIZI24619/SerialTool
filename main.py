@@ -9,14 +9,11 @@
 
 import sys
 
-from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
 
 from serial_tool.main_window import MainWindow
-from serial_tool.resources import asset_path, make_rounded_logo
+from serial_tool.resources import make_rounded_logo_icon
 from serial_tool.theme import QSS
-
-ICON_PATH = asset_path("logo.ico")
 
 
 def main():
@@ -25,8 +22,8 @@ def main():
     app.setOrganizationName("SerialTool")
     app.setStyle("Fusion")
     app.setStyleSheet(QSS)
-    # 圆角裁剪后的 logo 作为窗口图标（去掉白底）
-    app.setWindowIcon(QIcon(make_rounded_logo(32)))
+    # 多尺寸圆角 logo 作为窗口/任务栏图标（每个尺寸独立圆角裁剪，无白点）
+    app.setWindowIcon(make_rounded_logo_icon())
     win = MainWindow()
     win.show()
     sys.exit(app.exec_())
