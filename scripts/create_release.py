@@ -16,18 +16,18 @@ import urllib.parse
 import urllib.request
 
 REPO = "ZHIZI24619/SerialTool"
-TAG = "v0.1.8"
-NAME = "v0.1.8"
+TAG = "v0.1.9"
+NAME = "v0.1.9"
 BODY = (
-    "## v0.1.8 更新\n\n"
-    "- 彻底修复下载完成后不触发安装：移除下载进度条取消按钮（QProgressDialog 在 Windows 上会误触发 canceled 信号中断下载）\n"
+    "## v0.1.9 更新\n\n"
+    "- 修复夜间模式下标题栏 logo 的白边问题（logo 圆角裁剪，去掉白色背景）\n"
 )
 API = "https://api.github.com"
 UPLOAD_API = "https://uploads.github.com"
 ASSET = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "installer",
-    "SerialTool-Setup-0.1.8.exe",
+    "SerialTool-Setup-0.1.9.exe",
 )
 
 

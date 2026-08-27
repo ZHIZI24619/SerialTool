@@ -52,7 +52,7 @@ from PyQt5.QtWidgets import (
 from PyQt5 import sip
 
 from serial_tool.terminal_panel import TerminalPanel
-from serial_tool.resources import asset_path
+from serial_tool.resources import asset_path, make_rounded_logo
 
 # Windows 无边框窗口所需常量（仅 Windows 生效）
 if sys.platform.startswith("win"):
@@ -296,10 +296,10 @@ class MainWindow(QWidget):
 
         self.title_label = QLabel("串口调试助手")
         self.title_label.setObjectName("titleLabel")
-        # 左上角 logo
+        # 左上角 logo（圆角裁剪，去掉白底避免夜间模式出现白边）
         self.title_logo = QLabel()
         self.title_logo.setFixedSize(20, 20)
-        self.title_logo.setPixmap(QIcon(asset_path("logo.ico")).pixmap(20, 20))
+        self.title_logo.setPixmap(make_rounded_logo(20))
         self.title_logo.setToolTip("串口调试助手")
         lay.addWidget(self.title_logo)
         lay.addWidget(self.title_label)
