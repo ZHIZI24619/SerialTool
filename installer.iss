@@ -3,7 +3,7 @@
 ; 用 ISCC.exe 编译本脚本，产物输出到 installer\SerialTool-Setup-*.exe
 
 #define MyAppName "串口调试助手"
-#define MyAppVersion "0.1.6"
+#define MyAppVersion "0.1.7"
 #define MyAppExeName "SerialTool.exe"
 
 [Setup]
@@ -16,8 +16,8 @@ DefaultGroupName={#MyAppName}
 ; 允许用户选择任意安装位置（含非管理员可写目录）
 PrivilegesRequired=lowest
 AllowNoIcons=yes
-; 不启用自动关闭正在运行的程序（Inno 6 默认会尝试关闭进程，可能导致安装卡死）。
-; 更新流程会先让程序自动退出，手动安装时请先关闭 SerialTool。
+; 不启用 Inno 6 自带的关闭进程机制（其"自动关闭"会卡死），
+; 改为在 [Code] 中用 taskkill 强制结束正在运行的 SerialTool，避免文件被占用。
 CloseApplications=no
 OutputDir=installer
 OutputBaseFilename=SerialTool-Setup-{#MyAppVersion}
@@ -47,3 +47,15 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Result := '';
+  // 安装文件前，强制结束正在运行的 SerialTool，避免文件被占用（DeleteFile 拒绝访问）。
+  // /F 强制终止，/T 结束其子进程；进程不存在时 taskkill 返回非 0 但无害，继续安装。
+  Exec('taskkill.exe', '/F /IM SerialTool.exe /T', '', SW_HIDE,
+       ewWaitUntilTerminated, ResultCode);
+end;

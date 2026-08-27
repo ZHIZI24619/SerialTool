@@ -195,6 +195,8 @@ class Updater(QObject):
                 return
             # 延迟退出当前程序，避免安装程序因本程序仍在运行而提示关闭/卡死
             QTimer.singleShot(1500, QApplication.instance().quit)
+            # 兜底：若进程未正常退出，5 秒后强制终止（安装脚本也会用 taskkill 兜底）
+            QTimer.singleShot(5000, lambda: os._exit(0))
             QMessageBox.information(
                 parent,
                 "更新",
