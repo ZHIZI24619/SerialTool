@@ -3,7 +3,7 @@
 ; 用 ISCC.exe 编译本脚本，产物输出到 installer\SerialTool-Setup-*.exe
 
 #define MyAppName "串口调试助手"
-#define MyAppVersion "0.2.1"
+#define MyAppVersion "0.2.2"
 #define MyAppExeName "SerialTool.exe"
 ; PyInstaller onedir 产物目录名（dist\SerialTool\ -> 安装到 {app}\SerialTool\）
 #define MyAppFolder "SerialTool"

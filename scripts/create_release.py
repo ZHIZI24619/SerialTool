@@ -16,18 +16,18 @@ import urllib.parse
 import urllib.request
 
 REPO = "ZHIZI24619/SerialTool"
-TAG = "v0.2.1"
-NAME = "v0.2.1"
+TAG = "v0.2.2"
+NAME = "v0.2.2"
 BODY = (
-    "## v0.2.1 更新\n\n"
-    "- 修复任务栏/窗口图标四角白点：改为多尺寸圆角 logo（每个尺寸独立裁剪，缩放无白边）\n"
+    "## v0.2.2 更新\n\n"
+    "- 任务栏/窗口图标改用多尺寸圆角 .ico（PIL 生成），彻底解决任务栏图标白点与不圆角问题\n"
 )
 API = "https://api.github.com"
 UPLOAD_API = "https://uploads.github.com"
 ASSET = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "installer",
-    "SerialTool-Setup-0.2.1.exe",
+    "SerialTool-Setup-0.2.2.exe",
 )
 
 

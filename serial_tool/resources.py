@@ -38,15 +38,33 @@ def make_rounded_logo(size):
 
 
 def make_rounded_logo_icon():
-    """生成多尺寸圆角 logo 的 QIcon。
+    """生成多尺寸圆角 logo 的 QIcon（基于 .ico 文件）。
 
-    任务栏/标题栏/窗口会用不同尺寸显示图标；若只提供单个尺寸，
-    缩放时圆角边缘会重新采样出白色残留（白点）。这里为每个常用尺寸
-    单独做圆角裁剪，任何显示尺寸下都干净。返回 QIcon。
+    Windows 任务栏对 QIcon 动态生成的透明 pixmap 支持不佳（会显示方形+白点）。
+    这里用 PIL 生成一个真正的多尺寸圆角 .ico 文件再加载，Windows 对其透明圆角
+    的渲染是标准支持（与大多数圆角应用图标一致）。返回 QIcon。
     """
     from PyQt5.QtGui import QIcon
 
-    icon = QIcon()
-    for size in (16, 20, 24, 32, 48, 64, 128, 256):
-        icon.addPixmap(make_rounded_logo(size))
-    return icon
+    return QIcon(_rounded_ico_path())
+
+
+def _rounded_ico_path():
+    """用 PIL 生成多尺寸圆角 logo 的 .ico 并返回路径。"""
+    from PIL import Image, ImageDraw
+    import tempfile
+
+    ico_path = os.path.join(tempfile.gettempdir(), "SerialTool_rounded.ico")
+    src = Image.open(asset_path("logo.ico")).convert("RGBA")
+    src = src.resize((256, 256), Image.LANCZOS)
+    mask = Image.new("L", (256, 256), 0)
+    d = ImageDraw.Draw(mask)
+    d.rounded_rectangle((0, 0, 255, 255), radius=56, fill=255)
+    result = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    result = Image.composite(src, result, mask)
+    result.save(
+        ico_path,
+        format="ICO",
+        sizes=[(16, 16), (20, 20), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
+    )
+    return ico_path
