@@ -16,20 +16,18 @@ import urllib.parse
 import urllib.request
 
 REPO = "ZHIZI24619/SerialTool"
-TAG = "v0.1.5"
-NAME = "v0.1.5"
+TAG = "v0.1.6"
+NAME = "v0.1.6"
 BODY = (
-    "## v0.1.5 更新\n\n"
-    "- 修复安装程序「自动关闭正在运行的程序」时卡死的问题\n"
-    "- 安装脚本禁用 CloseApplications（Inno 6 默认尝试关闭进程导致卡死）\n"
-    "- 更新流程启动安装程序后自动退出本程序，避免文件占用冲突\n"
+    "## v0.1.6 更新\n\n"
+    "- 修复下载完成后不触发安装的问题（QProgressDialog.wasCanceled() 误判为取消，改用独立取消标志）\n"
 )
 API = "https://api.github.com"
 UPLOAD_API = "https://uploads.github.com"
 ASSET = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "installer",
-    "SerialTool-Setup-0.1.5.exe",
+    "SerialTool-Setup-0.1.6.exe",
 )
 
 

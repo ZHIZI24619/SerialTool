@@ -132,16 +132,23 @@ class Updater(QObject):
             QNetworkRequest.NoLessSafeRedirectPolicy,
         )
         reply = self._nam.get(req)
+        # 用独立标志记录用户是否点击了"取消"（不能依赖 QProgressDialog.wasCanceled()，
+        # 它在 Windows 上会误判：进度条关闭/完成时也被当成"已取消"，导致下载完成后不继续）
+        cancelled = [False]
+
+        def on_cancel():
+            cancelled[0] = True
+            reply.abort()
+
+        prog.canceled.connect(on_cancel)
 
         def on_progress(received, total):
             prog.setMaximum(max(1, total))
             prog.setValue(received)
-            if prog.wasCanceled():
-                reply.abort()
 
         def on_finished():
             prog.close()
-            if prog.wasCanceled():
+            if cancelled[0]:
                 _log("用户取消下载")
                 return
             error = reply.error()
