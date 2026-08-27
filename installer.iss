@@ -3,7 +3,7 @@
 ; 用 ISCC.exe 编译本脚本，产物输出到 installer\SerialTool-Setup-*.exe
 
 #define MyAppName "串口调试助手"
-#define MyAppVersion "0.1.7"
+#define MyAppVersion "0.1.8"
 #define MyAppExeName "SerialTool.exe"
 
 [Setup]

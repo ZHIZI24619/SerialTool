@@ -115,7 +115,9 @@ class Updater(QObject):
         dest = os.path.join(tempfile.gettempdir(), fname)
         _log(f"目标文件: {dest}")
 
-        prog = QProgressDialog("正在下载更新…", "取消", 0, 100, parent)
+        # 无取消按钮：QProgressDialog 在 Windows 上会误触发 canceled 信号
+        # （进度条完成/窗口处理时也被当成"取消"），导致下载被中断。
+        prog = QProgressDialog("正在下载更新…", "", 0, 100, parent)
         prog.setWindowTitle("软件更新")
         prog.setWindowModality(Qt.WindowModal)
         prog.setAutoClose(False)
@@ -132,30 +134,18 @@ class Updater(QObject):
             QNetworkRequest.NoLessSafeRedirectPolicy,
         )
         reply = self._nam.get(req)
-        # 用独立标志记录用户是否点击了"取消"（不能依赖 QProgressDialog.wasCanceled()，
-        # 它在 Windows 上会误判：进度条关闭/完成时也被当成"已取消"，导致下载完成后不继续）
-        cancelled = [False]
-
-        def on_cancel():
-            cancelled[0] = True
-            reply.abort()
-
-        prog.canceled.connect(on_cancel)
 
         def on_progress(received, total):
             prog.setMaximum(max(1, total))
             prog.setValue(received)
 
         def on_finished():
-            prog.close()
-            if cancelled[0]:
-                _log("用户取消下载")
-                return
             error = reply.error()
             # finished 时一次性读取全部数据（比 readyRead 收集更可靠）
             payload = bytes(reply.readAll())
             reply.deleteLater()
             if error != QNetworkReply.NoError:
+                prog.close()
                 msg = f"下载更新失败：{reply.errorString()}（错误码 {int(error)}）"
                 _log(msg)
                 QMessageBox.warning(parent, "更新", msg + "\n请检查网络后重试。")
@@ -164,10 +154,12 @@ class Updater(QObject):
             try:
                 if sha and hashlib.sha256(payload).hexdigest().lower() != sha.lower():
                     _log("sha256 校验失败")
+                    prog.close()
                     QMessageBox.warning(parent, "更新", "下载文件校验失败，已中止更新")
                     return
                 if len(payload) < 1024:
                     _log(f"下载内容异常：仅 {len(payload)} 字节")
+                    prog.close()
                     QMessageBox.warning(
                         parent,
                         "更新",
@@ -178,32 +170,30 @@ class Updater(QObject):
                     f.write(payload)
             except OSError as exc:
                 _log(f"保存更新文件失败: {exc}")
+                prog.close()
                 QMessageBox.warning(parent, "更新", f"保存更新文件失败：{exc}")
                 return
             _log(f"已保存：{dest}（{os.path.getsize(dest)} 字节）")
-            # 先启动安装程序，再提示（避免依赖用户先点弹窗确认而显得"没反应"）
+            # 下载成功：进度条窗口保持显示，提示即将启动安装程序（不突然消失）
+            prog.setMaximum(100)
+            prog.setValue(100)
+            prog.setLabelText("下载完成，正在启动安装程序…")
             try:
                 os.startfile(dest)
                 _log("已启动安装程序")
             except OSError as exc:
                 _log(f"启动安装程序失败: {exc}")
+                prog.close()
                 QMessageBox.warning(
                     parent,
                     "更新",
                     f"启动安装程序失败：{exc}\n请手动运行：\n{dest}",
                 )
                 return
-            # 延迟退出当前程序，避免安装程序因本程序仍在运行而提示关闭/卡死
+            # 保持窗口显示片刻，然后自动退出本程序（安装程序接管；5 秒兜底强退）
             QTimer.singleShot(1500, QApplication.instance().quit)
-            # 兜底：若进程未正常退出，5 秒后强制终止（安装脚本也会用 taskkill 兜底）
             QTimer.singleShot(5000, lambda: os._exit(0))
-            QMessageBox.information(
-                parent,
-                "更新",
-                f"新版本安装程序已启动：\n{dest}\n\n"
-                f"本程序将在 1.5 秒后自动关闭，以让安装程序顺利覆盖文件。\n"
-                f"如果安装向导未弹出，请关闭本程序后手动运行上面的文件。",
-            )
+            _log("更新流程完成，即将退出本程序")
 
         reply.downloadProgress.connect(on_progress)
         reply.finished.connect(on_finished)
