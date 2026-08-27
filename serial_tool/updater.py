@@ -13,9 +13,9 @@ import re
 import tempfile
 import time
 
-from PyQt5.QtCore import Qt, QObject, QUrl
+from PyQt5.QtCore import Qt, QObject, QTimer, QUrl
 from PyQt5.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
-from PyQt5.QtWidgets import QMessageBox, QProgressDialog
+from PyQt5.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
 from serial_tool import __version__
 
@@ -186,10 +186,13 @@ class Updater(QObject):
                     f"启动安装程序失败：{exc}\n请手动运行：\n{dest}",
                 )
                 return
+            # 延迟退出当前程序，避免安装程序因本程序仍在运行而提示关闭/卡死
+            QTimer.singleShot(1500, QApplication.instance().quit)
             QMessageBox.information(
                 parent,
                 "更新",
                 f"新版本安装程序已启动：\n{dest}\n\n"
+                f"本程序将在 1.5 秒后自动关闭，以让安装程序顺利覆盖文件。\n"
                 f"如果安装向导未弹出，请关闭本程序后手动运行上面的文件。",
             )
 

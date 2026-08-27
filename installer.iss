@@ -3,7 +3,7 @@
 ; 用 ISCC.exe 编译本脚本，产物输出到 installer\SerialTool-Setup-*.exe
 
 #define MyAppName "串口调试助手"
-#define MyAppVersion "0.1.4"
+#define MyAppVersion "0.1.5"
 #define MyAppExeName "SerialTool.exe"
 
 [Setup]
@@ -16,6 +16,9 @@ DefaultGroupName={#MyAppName}
 ; 允许用户选择任意安装位置（含非管理员可写目录）
 PrivilegesRequired=lowest
 AllowNoIcons=yes
+; 不启用自动关闭正在运行的程序（Inno 6 默认会尝试关闭进程，可能导致安装卡死）。
+; 更新流程会先让程序自动退出，手动安装时请先关闭 SerialTool。
+CloseApplications=no
 OutputDir=installer
 OutputBaseFilename=SerialTool-Setup-{#MyAppVersion}
 SetupIconFile=assets\logo.ico
