@@ -6,11 +6,13 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-# 1) 打包单文件 exe（带图标、隐藏黑框、含资源）
-Write-Host "==> 1/2 PyInstaller 打包 exe ..." -ForegroundColor Cyan
+# 1) 打包目录版 exe（带图标、隐藏黑框、含资源）
+# 用 --onedir 而非 --onefile：单文件版在 Windows 上会临时解压 DLL 到 %TEMP%\_MEI*，
+# 易被杀毒软件拦截导致 "Failed to load Python DLL"。目录版运行时无需解压，更稳定。
+Write-Host "==> 1/2 PyInstaller 打包 exe（onedir）..." -ForegroundColor Cyan
 $py = "C:\Users\35370\AppData\Local\Programs\Python\Python312\python.exe"
 if (-not (Test-Path $py)) { $py = "python" }
-& $py -m PyInstaller --onefile --windowed --name SerialTool --clean --noconfirm `
+& $py -m PyInstaller --onedir --windowed --name SerialTool --clean --noconfirm `
     --add-data "assets;assets" --icon assets\logo.ico main.py
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller 打包失败" }
 

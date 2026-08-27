@@ -117,7 +117,9 @@ class Updater(QObject):
 
         # 无取消按钮：QProgressDialog 在 Windows 上会误触发 canceled 信号
         # （进度条完成/窗口处理时也被当成"取消"），导致下载被中断。
+        # 用 setCancelButton(None) 彻底移除取消按钮（传空字符串会留下空按钮框）。
         prog = QProgressDialog("正在下载更新…", "", 0, 100, parent)
+        prog.setCancelButton(None)
         prog.setWindowTitle("软件更新")
         prog.setWindowModality(Qt.WindowModal)
         prog.setAutoClose(False)
