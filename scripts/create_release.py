@@ -16,19 +16,21 @@ import urllib.parse
 import urllib.request
 
 REPO = "ZHIZI24619/SerialTool"
-TAG = "v0.1.1"
-NAME = "v0.1.1"
+TAG = "v0.1.2"
+NAME = "v0.1.2"
 BODY = (
-    "## v0.1.1 修复\n\n"
-    "- 修复「检查更新」状态误报：已是最新版本时不再提示「网络异常或未配置更新地址」\n"
-    "- 区分网络异常 / 缺少安装包 / 已是最新版本三种情况，提示更准确\n"
+    "## v0.1.2 修复\n\n"
+    "- 修复「检查更新」下载更新失败时无提示、进度条消失后无反应的问题\n"
+    "- 下载超时从 60 秒放宽到 5 分钟，适配大安装包慢网络\n"
+    "- 显式跟随 GitHub 下载重定向（release 链接 302 到资产 CDN）\n"
+    "- 下载失败时弹出明确错误提示\n"
 )
 API = "https://api.github.com"
 UPLOAD_API = "https://uploads.github.com"
 ASSET = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "installer",
-    "SerialTool-Setup-0.1.1.exe",
+    "SerialTool-Setup-0.1.2.exe",
 )
 
 

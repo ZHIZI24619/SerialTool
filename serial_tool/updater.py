@@ -111,7 +111,13 @@ class Updater(QObject):
         prog.show()
 
         req = QNetworkRequest(QUrl(url))
-        req.setTransferTimeout(60000)
+        # 40MB 安装包，放宽超时到 5 分钟，避免慢网络下超时中断
+        req.setTransferTimeout(300000)
+        # 显式跟随下载链接重定向（GitHub release 下载会 302 到资产 CDN）
+        req.setAttribute(
+            QNetworkRequest.RedirectPolicyAttribute,
+            QNetworkRequest.NoLessSafeRedirectPolicy,
+        )
         reply = self._nam.get(req)
         data = bytearray()
 
@@ -126,15 +132,24 @@ class Updater(QObject):
 
         def on_finished():
             prog.close()
-            cancelled = prog.wasCanceled()
-            error = reply.error() != QNetworkReply.NoError
+            if prog.wasCanceled():
+                return
+            error = reply.error()
             payload = bytes(data)
             reply.deleteLater()
-            if cancelled or error:
+            if error != QNetworkReply.NoError:
+                QMessageBox.warning(
+                    parent,
+                    "更新",
+                    f"下载更新失败：{reply.errorString()}\n请检查网络后重试。",
+                )
                 return
             try:
                 if sha and hashlib.sha256(payload).hexdigest().lower() != sha.lower():
                     QMessageBox.warning(parent, "更新", "下载文件校验失败，已中止更新")
+                    return
+                if not payload:
+                    QMessageBox.warning(parent, "更新", "下载内容为空，已中止更新")
                     return
                 with open(dest, "wb") as f:
                     f.write(payload)
