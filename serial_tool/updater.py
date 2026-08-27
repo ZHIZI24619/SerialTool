@@ -11,6 +11,7 @@ import json
 import os
 import re
 import tempfile
+import time
 
 from PyQt5.QtCore import Qt, QObject, QUrl
 from PyQt5.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
@@ -25,6 +26,16 @@ GITHUB_REPO = "ZHIZI24619/SerialTool"
 SETUP_PREFIX = "SerialTool-Setup-"
 
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+
+
+def _log(msg):
+    """把更新流程日志写到临时目录，便于排查下载/安装问题。"""
+    try:
+        log_path = os.path.join(tempfile.gettempdir(), "SerialTool_update.log")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
+    except OSError:
+        pass
 
 # 检查结果状态（on_result 的第一个参数）
 STATE_ERROR = "error"        # 网络/API/解析失败
@@ -92,15 +103,17 @@ class Updater(QObject):
 
     # ------------------------------------------------------ 下载并安装
     def download_and_launch(self, parent, info):
-        """下载新版安装程序（带进度），校验 sha256 后启动安装。"""
+        """下载新版安装程序（带进度），校验后启动安装。"""
         url = info.get("url", "")
         sha = str(info.get("sha256", "") or "")
+        _log(f"开始下载更新: {url}")
         if not url:
             QMessageBox.warning(parent, "更新", "更新清单缺少下载地址")
             return
 
         fname = os.path.basename(QUrl(url).path()) or "SerialTool-update.exe"
         dest = os.path.join(tempfile.gettempdir(), fname)
+        _log(f"目标文件: {dest}")
 
         prog = QProgressDialog("正在下载更新…", "取消", 0, 100, parent)
         prog.setWindowTitle("软件更新")
@@ -119,7 +132,6 @@ class Updater(QObject):
             QNetworkRequest.NoLessSafeRedirectPolicy,
         )
         reply = self._nam.get(req)
-        data = bytearray()
 
         def on_progress(received, total):
             prog.setMaximum(max(1, total))
@@ -127,45 +139,59 @@ class Updater(QObject):
             if prog.wasCanceled():
                 reply.abort()
 
-        def on_ready():
-            data.extend(bytes(reply.readAll()))
-
         def on_finished():
             prog.close()
             if prog.wasCanceled():
+                _log("用户取消下载")
                 return
             error = reply.error()
-            payload = bytes(data)
+            # finished 时一次性读取全部数据（比 readyRead 收集更可靠）
+            payload = bytes(reply.readAll())
             reply.deleteLater()
             if error != QNetworkReply.NoError:
-                QMessageBox.warning(
-                    parent,
-                    "更新",
-                    f"下载更新失败：{reply.errorString()}\n请检查网络后重试。",
-                )
+                msg = f"下载更新失败：{reply.errorString()}（错误码 {int(error)}）"
+                _log(msg)
+                QMessageBox.warning(parent, "更新", msg + "\n请检查网络后重试。")
                 return
+            _log(f"下载完成：{len(payload)} 字节")
             try:
                 if sha and hashlib.sha256(payload).hexdigest().lower() != sha.lower():
+                    _log("sha256 校验失败")
                     QMessageBox.warning(parent, "更新", "下载文件校验失败，已中止更新")
                     return
-                if not payload:
-                    QMessageBox.warning(parent, "更新", "下载内容为空，已中止更新")
+                if len(payload) < 1024:
+                    _log(f"下载内容异常：仅 {len(payload)} 字节")
+                    QMessageBox.warning(
+                        parent,
+                        "更新",
+                        f"下载内容异常（仅 {len(payload)} 字节），已中止更新",
+                    )
                     return
                 with open(dest, "wb") as f:
                     f.write(payload)
             except OSError as exc:
+                _log(f"保存更新文件失败: {exc}")
                 QMessageBox.warning(parent, "更新", f"保存更新文件失败：{exc}")
+                return
+            _log(f"已保存：{dest}（{os.path.getsize(dest)} 字节）")
+            # 先启动安装程序，再提示（避免依赖用户先点弹窗确认而显得"没反应"）
+            try:
+                os.startfile(dest)
+                _log("已启动安装程序")
+            except OSError as exc:
+                _log(f"启动安装程序失败: {exc}")
+                QMessageBox.warning(
+                    parent,
+                    "更新",
+                    f"启动安装程序失败：{exc}\n请手动运行：\n{dest}",
+                )
                 return
             QMessageBox.information(
                 parent,
                 "更新",
-                f"新版本已下载到：\n{dest}\n\n即将启动安装程序，请先关闭本程序。",
+                f"新版本安装程序已启动：\n{dest}\n\n"
+                f"如果安装向导未弹出，请关闭本程序后手动运行上面的文件。",
             )
-            try:
-                os.startfile(dest)
-            except OSError as exc:
-                QMessageBox.warning(parent, "更新", f"启动安装程序失败：{exc}")
 
         reply.downloadProgress.connect(on_progress)
-        reply.readyRead.connect(on_ready)
         reply.finished.connect(on_finished)

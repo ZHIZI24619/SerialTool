@@ -16,19 +16,20 @@ import urllib.parse
 import urllib.request
 
 REPO = "ZHIZI24619/SerialTool"
-TAG = "v0.1.3"
-NAME = "v0.1.3"
+TAG = "v0.1.4"
+NAME = "v0.1.4"
 BODY = (
-    "## v0.1.3 更新\n\n"
-    "- 修复标题栏太阳/月亮图标黑色边框问题（改为自绘无描边图标）\n"
-    "- 修复更新下载失败无提示、放宽超时并跟随重定向（v0.1.2）\n"
+    "## v0.1.4 更新\n\n"
+    "- 修复更新下载完成后未触发安装的问题（改为 finished 时一次性读取数据，更可靠）\n"
+    "- 更新流程增加日志记录（%TEMP%\\SerialTool_update.log），便于排查\n"
+    "- 下载完成后先启动安装程序再提示\n"
 )
 API = "https://api.github.com"
 UPLOAD_API = "https://uploads.github.com"
 ASSET = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "installer",
-    "SerialTool-Setup-0.1.3.exe",
+    "SerialTool-Setup-0.1.4.exe",
 )
 
 
