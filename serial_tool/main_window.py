@@ -24,7 +24,16 @@ from PyQt5.QtCore import (
     QEasingCurve,
     QVariantAnimation,
 )
-from PyQt5.QtGui import QFont, QPainter, QPainterPath, QPixmap, QTransform, QIcon
+from PyQt5.QtGui import (
+    QColor,
+    QFont,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPixmap,
+    QTransform,
+    QIcon,
+)
 from PyQt5.QtWidgets import (
     QWidget,
     QGridLayout,
@@ -305,8 +314,8 @@ class MainWindow(QWidget):
         self.btn_title_pin.setToolTip("窗口置顶（固定在最前）")
         self.btn_title_pin.setIcon(QIcon(self._make_pin_icon(45)))  # 初始：不固定，横着
         self.btn_title_pin.setIconSize(QSize(18, 18))
-        self.btn_title_theme = self._make_title_button("☀", self._toggle_theme)
-        self.btn_title_theme.setFont(QFont("Segoe UI Emoji", 12))
+        self.btn_title_theme = self._make_title_button("", self._toggle_theme)
+        self.btn_title_theme.setIconSize(QSize(18, 18))
         self.btn_title_theme.setFixedSize(44, 26)
         self.btn_title_theme.setToolTip("切换 白天 / 夜间 模式")
         self.btn_title_min = self._make_title_button("─", self.showMinimized)
@@ -357,6 +366,47 @@ class MainWindow(QWidget):
             pm = pm.transformed(QTransform().rotate(angle), Qt.SmoothTransformation)
         return pm
 
+    def _make_moon_icon(self, color, size=24):
+        """绘制无黑色描边的新月图标（月牙在右侧）。"""
+        pm = QPixmap(size, size)
+        pm.fill(Qt.transparent)
+        painter = QPainter(pm)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(color)
+        cx, cy = size / 2.0, size / 2.0
+        r = size * 0.38
+        moon = QPainterPath()
+        moon.addEllipse(QPointF(cx, cy), r, r)
+        # 内圆向左偏移，切出右侧月牙
+        inner = QPainterPath()
+        inner.addEllipse(QPointF(cx - r * 0.55, cy - r * 0.12), r, r)
+        painter.drawPath(moon.subtracted(inner))
+        painter.end()
+        return pm
+
+    def _make_sun_icon(self, color, size=24):
+        """绘制无黑色描边的太阳图标（圆 + 八道光芒）。"""
+        pm = QPixmap(size, size)
+        pm.fill(Qt.transparent)
+        painter = QPainter(pm)
+        painter.setRenderHint(QPainter.Antialiasing)
+        cx, cy = size / 2.0, size / 2.0
+        pen = QPen(color, size * 0.09, Qt.SolidLine, Qt.RoundCap)
+        painter.setPen(pen)
+        for i in range(8):
+            ang = math.radians(i * 45)
+            x1 = cx + math.cos(ang) * size * 0.26
+            y1 = cy + math.sin(ang) * size * 0.26
+            x2 = cx + math.cos(ang) * size * 0.40
+            y2 = cy + math.sin(ang) * size * 0.40
+            painter.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(color)
+        painter.drawEllipse(QPointF(cx, cy), size * 0.21, size * 0.21)
+        painter.end()
+        return pm
+
     # ----------------------------------------------------------- 主题切换
     def _toggle_theme(self):
         """点击主题图标：切换主题，并以图标为中心圆形扩散过渡。
@@ -385,7 +435,13 @@ class MainWindow(QWidget):
 
         app = QApplication.instance()
         app.setStyleSheet(QSS if self._dark_mode else LIGHT_QSS)
-        self.btn_title_theme.setText("☀" if self._dark_mode else "🌙")
+        # 用无黑色描边的自绘图标替代 Emoji（Segoe UI Emoji 的 🌙 自带黑边）
+        if self._dark_mode:
+            self.btn_title_theme.setIcon(QIcon(self._make_sun_icon(QColor("#ffd35c"))))
+        else:
+            self.btn_title_theme.setIcon(
+                QIcon(self._make_moon_icon(QColor("#2b3038")))
+            )
         for w in QApplication.allWidgets():
             w.style().unpolish(w)
             w.style().polish(w)
