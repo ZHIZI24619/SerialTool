@@ -3,6 +3,9 @@ build/
 dist/
 *.spec
 
+# Inno Setup 安装包输出
+installer/
+
 # Python
 __pycache__/
 *.py[cod]

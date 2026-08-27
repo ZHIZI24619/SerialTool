@@ -26,6 +26,12 @@ SETUP_PREFIX = "SerialTool-Setup-"
 
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
+# 检查结果状态（on_result 的第一个参数）
+STATE_ERROR = "error"        # 网络/API/解析失败
+STATE_NO_ASSET = "no_asset"  # Release 存在但缺少安装包附件
+STATE_LATEST = "latest"      # 已是最新版本
+STATE_FOUND = "found"        # 发现新版本
+
 
 def _parse_version(v):
     """把版本号字符串解析为可比较的数字列表，如 '1.2.3' -> [1,2,3]。"""
@@ -46,8 +52,9 @@ class Updater(QObject):
 
     # ---------------------------------------------------------- 检查更新
     def check(self, on_result):
-        """异步检查更新。on_result(ok, new_version, info)
-        ok=True 且 new_version 非空表示发现新版本；info 为 dict(version/url/sha256)。"""
+        """异步检查更新。on_result(state, new_version, info)
+        state 为 STATE_*；发现新版本时 new_version 为最新版本号，
+        info 为 dict(version/url/sha256)。"""
         req = QNetworkRequest(QUrl(LATEST_RELEASE_URL))
         req.setTransferTimeout(15000)
         reply = self._nam.get(req)
@@ -56,7 +63,7 @@ class Updater(QObject):
     def _on_check_finished(self, reply, on_result):
         try:
             if reply.error() != QNetworkReply.NoError:
-                on_result(False, None, None)
+                on_result(STATE_ERROR, None, None)
                 return
             data = json.loads(bytes(reply.readAll()).decode("utf-8"))
             # tag_name 形如 "v0.2.0"，去掉前导 v 得到版本号
@@ -71,15 +78,15 @@ class Updater(QObject):
                         sha = digest[len("sha256:") :]
                     break
             if not new_ver or not url:
-                on_result(False, None, None)
+                on_result(STATE_NO_ASSET, None, None)
                 return
             info = {"version": new_ver, "url": url, "sha256": sha}
             if is_newer(new_ver, __version__):
-                on_result(True, new_ver, info)
+                on_result(STATE_FOUND, new_ver, info)
             else:
-                on_result(False, None, None)
+                on_result(STATE_LATEST, new_ver, info)
         except Exception:
-            on_result(False, None, None)
+            on_result(STATE_ERROR, None, None)
         finally:
             reply.deleteLater()
 

@@ -568,7 +568,13 @@ class MainWindow(QWidget):
     def _check_update(self):
         """检查更新：拉取版本清单，发现新版本则提示下载安装。"""
         from serial_tool import __version__
-        from serial_tool.updater import Updater
+        from serial_tool.updater import (
+            STATE_ERROR,
+            STATE_FOUND,
+            STATE_LATEST,
+            STATE_NO_ASSET,
+            Updater,
+        )
 
         btn = self.btn_check_update
         btn.setEnabled(False)
@@ -576,20 +582,33 @@ class MainWindow(QWidget):
         updater = Updater(self)
         self._updater = updater  # 持有引用，防止被回收
 
-        def on_result(ok, new_version, info):
+        def on_result(state, new_version, info):
             btn.setEnabled(True)
             btn.setText("检查更新")
-            if not ok or new_version is None:
+            if state == STATE_ERROR:
+                QMessageBox.warning(
+                    self,
+                    "检查更新",
+                    "无法连接更新服务器，请检查网络后重试。\n"
+                    "（更新地址：GitHub Releases，大陆网络访问可能需要代理）",
+                )
+                return
+            if state == STATE_NO_ASSET:
                 QMessageBox.information(
                     self,
                     "检查更新",
-                    (
-                        "当前已是最新版本"
-                        if ok
-                        else "暂时无法检查更新（网络异常或尚未配置更新地址）。"
-                    ),
+                    "更新服务器已连接，但 Release 中未找到安装包\n"
+                    "（缺少 SerialTool-Setup-*.exe 附件），请联系开发者。",
                 )
                 return
+            if state == STATE_LATEST:
+                QMessageBox.information(
+                    self,
+                    "检查更新",
+                    f"当前已是最新版本 v{__version__}。",
+                )
+                return
+            # STATE_FOUND：发现新版本
             ret = QMessageBox.question(
                 self,
                 "发现新版本",
